@@ -9,9 +9,6 @@ main = do
   let matches = getAllTextMatches (inputLine =~ regex) :: [String]
   let res = foldl sumProdIfEnabled (0, True) matches
   print res
-  -- let numPairsToMul = map matchPair muls
-  -- let result = sum $ map (uncurry (*)) numPairsToMul
-  -- print result
 
 sumProdIfEnabled :: (Int, Bool) -> String -> (Int, Bool)
 sumProdIfEnabled (s, e) str

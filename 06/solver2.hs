@@ -14,23 +14,31 @@ main = do
   let (blocks, guard) = initializeWorld inputLines
   let guardRoute = takeWhile (not . guardOutsideMap mapSize) $ iterate (simulateGuard mapSize blocks) guard
   print $ length $ nub $ map fst guardRoute
-  let loopCauses = filter (checkLoop mapSize blocks) guardRoute
-  print guard
-  print $ head loopCauses
-  print $ length 
-    $ filter (\pos -> pos /= fst guard) 
-    $ nub $ map fst loopCauses
+  let loopCauses = snd $ foldl (checkLoop mapSize blocks) (S.empty, []) guardRoute
+  print $ length
+    $ filter (\pos -> pos /= fst guard)
+    $ nub loopCauses
 
-checkLoop :: Int -> S.Set Pos -> (Pos, Ori) -> Bool
-checkLoop mapSize blocks (pos, ori) = checkLoop' mapSize blocks' S.empty (pos, ori) where
-  newBlockPos = nextPos pos ori
-  blocks' = S.insert newBlockPos blocks
+uniqueRoute :: (S.Set Pos, [(Pos, Ori)]) -> (Pos, Ori) -> (S.Set Pos, [(Pos, Ori)])
+uniqueRoute (poss, path) (pos, ori)
+  | S.member pos poss = (poss, path)
+  | otherwise = (S.insert pos poss, path ++ [(pos, ori)])
 
-checkLoop' :: Int -> S.Set Pos -> S.Set (Pos, Ori) -> (Pos, Ori) -> Bool
-checkLoop' mapSize blocks visited (pos, ori)
+checkLoop :: Int -> S.Set Pos -> (S.Set Pos, [Pos]) -> (Pos, Ori) -> (S.Set Pos, [Pos])
+checkLoop mapSize blocks (poss, loops) (pos, ori)
+  | S.member newBlockPos poss = (poss, loops)
+  | hasLoop = (S.insert newBlockPos poss, loops ++ [newBlockPos])
+  | otherwise = (S.insert newBlockPos poss, loops)
+  where
+      newBlockPos = nextPos pos ori
+      blocks' = S.insert newBlockPos blocks
+      hasLoop = checkLoop' 0 mapSize blocks' S.empty (pos, ori)
+
+checkLoop' :: Int -> Int -> S.Set Pos -> S.Set (Pos, Ori) -> (Pos, Ori) -> Bool
+checkLoop' numVisited mapSize blocks visited (pos, ori)
   | guardOnMapEdge mapSize (pos, ori) = False
-  | S.member (pos, ori) visited && S.size visited > 4 = True
-  | otherwise = checkLoop' mapSize blocks visited' (pos', ori') where
+  | S.member (pos, ori) visited = True -- Why doesnt this work ?
+  | otherwise = checkLoop' (numVisited + 1) mapSize blocks visited' (pos', ori') where
     visited' = S.insert (pos, ori) visited
     next = nextPos pos ori
     nextPosBlocked = S.member next blocks

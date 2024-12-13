@@ -1,4 +1,3 @@
-import Text.Regex.TDFA ( (=~), AllMatches(getAllMatches), AllTextMatches (getAllTextMatches) )
 import Prelude hiding (lookup)
 import qualified Data.Set as S
 

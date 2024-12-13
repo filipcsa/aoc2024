@@ -1,4 +1,3 @@
-import Text.Regex.TDFA ( (=~), AllMatches(getAllMatches), AllTextMatches (getAllTextMatches) )
 import Prelude hiding (lookup)
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -27,24 +26,24 @@ numSides region = l + r + u + d where
   poss = S.toList region
   lcs = filter (\(x, y) -> not ((x, y - 1) `S.member` region)) poss
   lls = groupByKey snd lcs
-  l = sum $ map (countD fst) (M.elems lls)
+  l = sum $ map (countContinuousAreas fst) (M.elems lls)
 
   rcs = filter (\(x, y) -> not ((x, y + 1) `S.member` region)) poss
   rrs = groupByKey snd rcs
-  r = sum $ map (countD fst) (M.elems rrs)
+  r = sum $ map (countContinuousAreas fst) (M.elems rrs)
 
   ucs =  filter (\(x, y) -> not ((x-1, y )`S.member` region)) poss
   uus = groupByKey fst ucs
-  u = sum $ map (countD snd) (M.elems uus)
+  u = sum $ map (countContinuousAreas snd) (M.elems uus)
   
   dcs = filter (\(x, y) -> not ((x+1, y )`S.member` region)) poss
   dds = groupByKey fst dcs
-  d = sum $ map (countD snd) (M.elems dds)
+  d = sum $ map (countContinuousAreas snd) (M.elems dds)
 
-countD :: ((Int, Int) -> Int) -> [(Int, Int)] -> Int
-countD g as = 1 + tt where
+countContinuousAreas :: ((Int, Int) -> Int) -> [(Int, Int)] -> Int
+countContinuousAreas g as = 1 + areas where
   sortedMapped = sort $ map g as
-  tt = length $ filter (\(a, b) -> a < b-1) (zip sortedMapped (tail sortedMapped))
+  areas = length $ filter (\(a, b) -> a < b-1) (zip sortedMapped (tail sortedMapped))
 
 
 groupByKey :: (Ord k) => (v -> k) -> [v] -> M.Map k [v]

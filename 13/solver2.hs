@@ -22,7 +22,6 @@ isCorrect :: (Game, (Int, Int)) -> Bool
 isCorrect ([(a1, a2), (b1, b2), (p1, p2)], (x, y)) = f && s where
   f = a1*x + b1*y == p1
   s = a2*x + b2*y == p2
-  -- print $ sum gameCosts
 
 -- Linear equation, manual solution to avoid matrices ... 
 -- a1x + b1y = p1
@@ -37,8 +36,6 @@ solve [(a1, a2), (b1, b2), (p1, p2)] = (x, y) where
   pDiff = (p1* eq1Mult) - (p2 * eq2Mult)
   x = pDiff `div` aDiff
   y = (p1 - a1*x) `div` b1 
-
-
 
 playGame :: Game -> Int
 playGame [(ax, ay), (bx, by), (px, py)] = cost where

@@ -1,6 +1,7 @@
 import Text.Regex.TDFA ( (=~), AllMatches(getAllMatches), AllTextMatches (getAllTextMatches) )
 import Prelude hiding (lookup)
 import Data.List.Split (splitOn)
+import Data.Maybe (fromJust, isNothing, isJust)
 
 data State = State {
   ip :: Int,
@@ -16,9 +17,29 @@ main = do
   contents <- getContents
   let strs = lines contents
   let initState = parseState strs
-  let finalState = run initState
-  print initState
-  print finalState
+  let prg = program initState
+  let regABin = fromJust $ findBinRec initState [] (reverse $ program initState)
+  print $ bin2Num regABin
+  let stateWithA = initState{regA=(bin2Num regABin)}
+  print $ run stateWithA
+
+findBinRec :: State -> [Int] -> [Int] -> Maybe [Int]
+findBinRec _ bin [] = Just bin
+findBinRec state bin (n:ns)
+  | null matches = Nothing
+  | all isNothing results = Nothing
+  | otherwise = head $ filter isJust results where
+  nextThrees = [[a,b,c] | a <- [0,1], b <- [0,1], c <- [0,1]]
+  nextBins = [bin ++ nextThree | nextThree <- nextThrees]
+  outputs = map (getFirstOutputForInput state) nextBins
+  matches = map fst $ filter (\(b, o') -> o'== n) $ zip nextBins outputs
+  results = [findBinRec state match ns | match <- matches]
+
+getFirstOutputForInput :: State -> [Int] -> Int
+getFirstOutputForInput state bin = head $ outputs state' where
+  a = bin2Num bin
+  stateWithA = state{regA=a}
+  state' = run stateWithA
 
 run :: State -> State
 run state

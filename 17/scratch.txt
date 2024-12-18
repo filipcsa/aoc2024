@@ -1,0 +1,28 @@
+2,4,1,1,7,5,1,5,4,0,5,5,0,3,3,0
+
+var A = ?
+var B = 0
+var C = 0
+
+do {
+  B = A % 8 // 2,4
+  B = B bitXor 1 // 1,1 if even + 1
+  C = A / (2^B) // 7,5 b in range [0,7], useless redundant
+  B = B bitXor B // 1,5  bitwise negation of b
+  C = 
+...
+
+} while (A != 0)
+
+Hypothesis:
+Convert A to binary. Then:
+The 3 most significant bits seem to be deciding the last output.
+The next 3 bits decide the second to last output and so on.
+
+100101010110100100110000111010000
+100101010110100100110000111011010
+
+100101010110100100110000111010 [1,5,4,0,5,5,0,3,3,0]
+100101010110100100110000111011 [1,5,4,0,5,5,0,3,3,0]
+
+not always unique -> backtrack

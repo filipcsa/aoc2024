@@ -1,4 +1,3 @@
-import qualified Data.Set as S
 import qualified Data.Map as M
 
 type Pos = (Int, Int)
@@ -31,7 +30,7 @@ evalCheat :: (Pos, Int) -> M.Map Int Int -> (Pos, Int) -> M.Map Int Int
 evalCheat (fromPos, fromDist) cheatMap (toPos, toDist) = cheatMap' where
   cheatDist = dist fromPos toPos
   saved = toDist - fromDist - cheatDist
-  cheatMap' = if cheatDist > allowedCheat && saved > 0
+  cheatMap' = if cheatDist > allowedCheat || saved <= 0
     then cheatMap
     else M.insert saved n cheatMap where
       n = 1 + M.findWithDefault 0 saved cheatMap

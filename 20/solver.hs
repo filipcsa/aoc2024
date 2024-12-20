@@ -1,6 +1,5 @@
 import qualified Data.Set as S
 import qualified Data.Map as M
-import qualified Control.Applicative as Map
 
 type Pos = (Int, Int)
 
@@ -16,7 +15,7 @@ main = do
   let strs = lines contents
   let s = length strs - 1
   let start = head [(x,y) | x <- [0..s], y <- [0..s], strs !! x !! y == 'S']
-  let originalPath = dos strs start Map.empty
+  let originalPath = dos strs start []
   let posByDistFromStart = zip originalPath [0..]
   let cheatSaveMap = evalCheats posByDistFromStart M.empty
   print $ length originalPath

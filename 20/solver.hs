@@ -1,51 +1,54 @@
 import qualified Data.Set as S
 import qualified Data.Map as M
-import Data.List (minimumBy, maximumBy)
-import Data.Function (on)
+import qualified Control.Applicative as Map
 
 type Pos = (Int, Int)
 
+allowedCheat :: Int
+allowedCheat = 20
+
+minSaving :: Int
+minSaving = 100
+
 main :: IO ()
 main = do
-  contents <- readFile "input.txt"
+  contents <- getContents
   let strs = lines contents
   let s = length strs - 1
   let start = head [(x,y) | x <- [0..s], y <- [0..s], strs !! x !! y == 'S']
-  let originalPath = dos strs start (-1,-1) 0 M.empty M.empty
-  let cheatWalls = findCheatWalls strs (M.keys originalPath) S.empty
-  print $ length cheatWalls
-  let cheatSaveMap = foldl (evalCheat strs start originalPath) M.empty cheatWalls
-  let actualSaves = map (\(s,n) -> ((length originalPath) - s, n)) $ M.toList cheatSaveMap
+  let originalPath = dos strs start Map.empty
+  let posByDistFromStart = zip originalPath [0..]
+  let cheatSaveMap = evalCheats posByDistFromStart M.empty
   print $ length originalPath
-  print $ sum $ map snd $ filter (\(s, n) -> s >= 100) actualSaves
+  print $ sum $ map snd $ filter (\(s, n) -> s >= minSaving) $ M.toList cheatSaveMap
 
-evalCheat :: [String] -> Pos -> M.Map Pos Int -> M.Map Int Int -> Pos -> M.Map Int Int
-evalCheat strs start origPath saves cheatWall
-  | M.size cheatPath > 0 = M.insert improvement (1 + M.findWithDefault 0 improvement saves) saves
-  | otherwise = saves where
-    cheatPath = dos strs start cheatWall 0 origPath M.empty
-    improvement = length cheatPath
+-- key is the time saved, value is the actual number of such cheats
+evalCheats :: [(Pos, Int)] ->  M.Map Int Int -> M.Map Int Int
+evalCheats [] cheatMap = cheatMap
+evalCheats (p:poss) cheatMap = evalCheats poss cheatMap' where
+  cheatMap' = foldl (evalCheat p) cheatMap poss
 
-findCheatWalls :: [String] -> [Pos] -> S.Set Pos -> S.Set Pos
-findCheatWalls strs [] cheatWalls = cheatWalls
-findCheatWalls strs (pos:poss) cheatWalls = findCheatWalls strs poss cheatWalls' where
-  neighborWalls = filter (\(x,y) -> strs !! x !! y == '#') $ neighbors strs pos
-  cheatWalls' = foldl (flip S.insert) cheatWalls neighborWalls
+evalCheat :: (Pos, Int) -> M.Map Int Int -> (Pos, Int) -> M.Map Int Int
+evalCheat (fromPos, fromDist) cheatMap (toPos, toDist) = cheatMap' where
+  cheatDist = dist fromPos toPos
+  saved = toDist - fromDist - cheatDist
+  cheatMap' = if cheatDist > allowedCheat && saved > 0
+    then cheatMap
+    else M.insert saved n cheatMap where
+      n = 1 + M.findWithDefault 0 saved cheatMap
+
+dist :: Pos -> Pos -> Int
+dist (x1, y1) (x2, y2) = abs (x1-x2) + abs (y1-y2)
 
 -- depth only search 
-dos :: [String] -> Pos -> Pos -> Int -> M.Map Pos Int -> M.Map Pos Int -> M.Map Pos Int
-dos strs (x,y) cheatWall n origPath visited
-  | strs !! x !! y == 'E' = M.insert (x,y) n visited
-  | null nextPoss = M.empty
-  | otherwise = dos strs pos' cheatWall (n+1) origPath visited' where
-    visited' = M.insert (x,y) n visited
-    nextPoss = filter (\(x',y') -> (strs !! x' !! y' /= '#') || (x',y') == cheatWall)
-      $ filter (`M.notMember` visited') $ neighbors strs (x,y)
-    pos' = if length nextPoss > 1 then
-      if cheatWall `elem` nextPoss
-        then cheatWall
-        else fst $ maximumBy (compare `on` snd) $ map (\p -> (p, M.findWithDefault 0 p origPath)) nextPoss
-      else head nextPoss
+dos :: [String] -> Pos -> [Pos] -> [Pos]
+dos strs (x,y) path
+  | strs !! x !! y == 'E' = path'
+  | otherwise = dos strs pos' path' where
+    path' = path ++ [(x,y)]
+    nextPoss = filter (\(x',y') -> strs !! x' !! y' /= '#')
+      $ filter (\p -> null path || p /= last path) $ neighbors strs (x,y)
+    pos' = head nextPoss
 
 neighbors :: [String] -> Pos -> [Pos]
 neighbors strs (x,y) = filter (\(x,y) -> x >= 0 && x < s && y >= 0 && y < s)

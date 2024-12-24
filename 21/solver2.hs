@@ -1,5 +1,6 @@
 import qualified Data.Map as M
-import Data.List (nub, permutations)
+import Data.List (nub, permutations, minimumBy)
+import Data.Function (on)
 
 type Pos = (Int, Int)
 
@@ -16,7 +17,7 @@ main = do
   contents <- getContents
   let inputLines = lines contents
   let seqPerPair = buildDPSeqPairs
-  let ls = map (shortestSeqLength seqPerPair 2) inputLines
+  let ls = map (shortestSeqLength seqPerPair 25) inputLines
   let ns = map (read . init) inputLines :: [Int]
   print ls
   print ns
@@ -38,13 +39,20 @@ accumPairs :: M.Map (Char, Char) String -> M.Map (Char, Char) Int -> ((Char, Cha
 accumPairs dirPairs pairOccs (pair, occs) = 
   foldl (\acc p -> M.insert p (occs + M.findWithDefault 0 p acc) acc) pairOccs newPairs where
     newSeq = M.findWithDefault "" pair dirPairs
-    newPairs = if head newSeq /= 'A'
-      then zip ('A':newSeq) newSeq
-      else zip newSeq (tail newSeq)
+    newPairs = zip ('A':newSeq) newSeq
 
 buildDPSeqPairs :: M.Map (Char, Char) String
-buildDPSeqPairs = M.fromList [((prev, next), head $ moveSeqs' dirpad (prev, next))
+buildDPSeqPairs = M.fromList [((prev, next), shortesOpt dirpad (prev, next))
   | prev <- "^A<v>", next <- "^A<v>"]
+
+-- need to go 3 lvls deep to uniquely detemine shorted path
+shortesOpt :: M.Map Char Pos -> (Char, Char) -> String
+shortesOpt dirpad (prev, next) = shortest where
+  optsLvl1 = moveSeqs' dirpad (prev, next)
+  optsLvl2 = map (moveSeqs dirpad) optsLvl1
+  optsLvl3 = map (\o2s -> concat $ map (moveSeqs dirpad) o2s) optsLvl2
+  lvl2mins = map (\o2s -> minimum $ map length o2s) optsLvl3
+  shortest = fst $ minimumBy (compare `on` snd) $ zip optsLvl1 lvl2mins
 
 moveSeqs :: M.Map Char Pos -> String -> [String]
 moveSeqs somepad str = foldl (\acc ps -> [a ++ p | a <- acc, p <- ps]) [""] subseqPerms where
